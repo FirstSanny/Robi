@@ -15,6 +15,7 @@ def main():
     ENTRY-POINT
     '''
     
+    # Parsing Commandlineparams
     parser = OptionParser()
     parser.add_option("--pip",
         help="Parent broker port. The IP address or your robot",
@@ -31,6 +32,7 @@ def main():
     pip   = opts.pip
     pport = opts.pport
     
+    # Init Proxy's    
     ttsProxy = ALProxy("ALTextToSpeech", pip, pport)
     motionProxy  = ALProxy("ALMotion", pip, pport)
     postureProxy = ALProxy("ALRobotPosture", pip, pport)
