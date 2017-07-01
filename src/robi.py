@@ -7,8 +7,9 @@ from naoqi import ALProxy
 
 from optparse import OptionParser
 
-
-NAO_IP = "nao.local"
+# CONSTANTS
+DEFAULT_NAO_IP = "nao.local"
+DEFAULT_NAO_PORT = 9559
 
 def main(pip, pport):
     '''
@@ -41,8 +42,8 @@ if __name__ == "__main__":
         dest="pport",
         type="int")
     parser.set_defaults(
-        pip=NAO_IP,
-        pport=9559)
+        pip=DEFAULT_NAO_IP,
+        pport=DEFAULT_NAO_PORT)
     
     (opts, args_) = parser.parse_args()
     pip   = opts.pip
