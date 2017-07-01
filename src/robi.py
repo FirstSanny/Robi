@@ -31,9 +31,18 @@ def main():
     pip   = opts.pip
     pport = opts.pport
     
-    tts = ALProxy("ALTextToSpeech", pip, pport)
-    tts.say("I am getting on my way.")
+    ttsProxy = ALProxy("ALTextToSpeech", pip, pport)
+    motionProxy  = ALProxy("ALMotion", pip, pport)
+    postureProxy = ALProxy("ALRobotPosture", pip, pport)
+
+    # Wake up robot
+    motionProxy.wakeUp()
+
+    # Send robot to Stand Init
+    postureProxy.goToPosture("StandInit", 0.5)
+    ttsProxy.say("Hello Friends.")
     
+    ttsProxy.say("I am getting on my way.")
     
 
 if __name__ == "__main__":
