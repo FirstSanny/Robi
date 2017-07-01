@@ -10,27 +10,10 @@ from optparse import OptionParser
 
 NAO_IP = "nao.local"
 
-def main():
+def main(pip, pport):
     '''
     ENTRY-POINT
     '''
-    
-    # Parsing Commandlineparams
-    parser = OptionParser()
-    parser.add_option("--pip",
-        help="Parent broker port. The IP address or your robot",
-        dest="pip")
-    parser.add_option("--pport",
-        help="Parent broker port. The port NAOqi is listening to",
-        dest="pport",
-        type="int")
-    parser.set_defaults(
-        pip=NAO_IP,
-        pport=9559)
-    
-    (opts, args_) = parser.parse_args()
-    pip   = opts.pip
-    pport = opts.pport
     
     # Init Proxy's    
     ttsProxy = ALProxy("ALTextToSpeech", pip, pport)
@@ -48,4 +31,20 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+        # Parsing Commandlineparams
+    parser = OptionParser()
+    parser.add_option("--pip",
+        help="Parent broker port. The IP address or your robot",
+        dest="pip")
+    parser.add_option("--pport",
+        help="Parent broker port. The port NAOqi is listening to",
+        dest="pport",
+        type="int")
+    parser.set_defaults(
+        pip=NAO_IP,
+        pport=9559)
+    
+    (opts, args_) = parser.parse_args()
+    pip   = opts.pip
+    pport = opts.pport
+    main(pip, pport)
