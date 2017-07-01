@@ -32,7 +32,7 @@ def main(pip, pport):
     
 
 if __name__ == "__main__":
-        # Parsing Commandlineparams
+    # Parsing Commandlineparams
     parser = OptionParser()
     parser.add_option("--pip",
         help="Parent broker port. The IP address or your robot",
@@ -48,4 +48,5 @@ if __name__ == "__main__":
     (opts, args_) = parser.parse_args()
     pip   = opts.pip
     pport = opts.pport
+    
     main(pip, pport)
