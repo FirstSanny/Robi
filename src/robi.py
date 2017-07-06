@@ -3,17 +3,37 @@ This is the main-file for our RoboCup project
 The Robo should search for 2 objects and bring it to
 a special destination for each object
 '''
-
+from math import pi as PI
 from naoqi import ALProxy
-
+from naoqi import ALModule
 from optparse import OptionParser
 
 # CONSTANTS
 DEFAULT_NAO_IP = "nao.local"
 DEFAULT_NAO_PORT = 9559
 
+#global variables
+balldetected = False
+pip = None
+pport = None
 
-def main(pip, pport):
+
+class BallDetectionModule(ALModule):
+
+    def __init__(self):
+        super(BallDetectionModule, self).__init__()
+        self.memory = ALProxy("ALMemory")
+        self.memory.subscribeToEvent("redBallDetected",
+            "BallDetecter",
+            "onRedBallDetected")
+
+    def onRedBallDetected(self, *_args):
+        self.memory.unsubscribeToEvent("redBallDetected",
+            "BallDetecter")
+        global balldetected
+        balldetected = True
+
+def main():
     '''
     ENTRY-POINT
     '''
@@ -21,16 +41,20 @@ def main(pip, pport):
     # Init Proxy's
     ttsProxy = ALProxy("ALTextToSpeech", pip, pport)
     motionProxy = ALProxy("ALMotion", pip, pport)
-    postureProxy = ALProxy("ALRobotPosture", pip, pport)
 
     # Wake up robot
+    motionProxy.setStiffnesses("Body", 1.0)
     motionProxy.wakeUp()
 
     # Send robot to Stand Init
-    postureProxy.goToPosture("StandInit", 0.5)
+    motionProxy.moveInit()
     ttsProxy.say("Hello Friends.")
 
-    ttsProxy.say("I am getting on my way.")
+    ttsProxy.say("Going to search for the ball.")
+    while not(balldetected):
+        motionProxy.moveTo(0, 0, PI / 8)
+
+    ttsProxy.say("Found the Ball.")
 
 
 if __name__ == "__main__":
@@ -48,7 +72,9 @@ if __name__ == "__main__":
         pport=DEFAULT_NAO_PORT)
 
     (opts, args_) = parser.parse_args()
+    global pip
     pip = opts.pip
+    global pport
     pport = opts.pport
 
-    main(pip, pport)
+    main()
