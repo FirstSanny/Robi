@@ -33,6 +33,7 @@ class BallDetectionModule(ALModule):
         global balldetected
         balldetected = True
 
+
 def main():
     '''
     ENTRY-POINT
@@ -52,7 +53,7 @@ def main():
 
     ttsProxy.say("Going to search for the ball.")
     while not(balldetected):
-        motionProxy.moveTo(0, 0, PI / 8)
+        motionProxy.moveTo(0, 0, PI / 16)
 
     ttsProxy.say("Found the Ball.")
 
