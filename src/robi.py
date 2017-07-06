@@ -60,6 +60,8 @@ def main():
 
 if __name__ == "__main__":
     # Parsing Commandlineparams
+    global pip
+    global pport
     parser = OptionParser()
     parser.add_option("--pip",
         help="Parent broker port. The IP address or your robot",
@@ -73,9 +75,6 @@ if __name__ == "__main__":
         pport=DEFAULT_NAO_PORT)
 
     (opts, args_) = parser.parse_args()
-    global pip
     pip = opts.pip
-    global pport
     pport = opts.pport
-
     main()
