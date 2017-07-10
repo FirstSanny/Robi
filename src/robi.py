@@ -57,8 +57,8 @@ def main():
     ttsProxy.say("Going to search for the ball.")
     while not(orangedetected):
         cameraId = 0
-        image = visionProxy.getBGR24Image(cameraId)
-        #image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
+        data = visionProxy.getBGR24Image(cameraId)
+        image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
         #cv2.imshow('image', image)
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
