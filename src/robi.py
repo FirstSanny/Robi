@@ -116,7 +116,7 @@ def main():
         ttsProxy.say("Found the Ball. Moving toward it.")
         motionProxy.move(distance/8, 0, 0);
     
-
+    
 
 if __name__ == "__main__":
     # Parsing Commandlineparams
