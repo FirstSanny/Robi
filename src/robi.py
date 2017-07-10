@@ -84,7 +84,7 @@ def main():
             print "y = ", y
 
             # mark the object with an red circle
-            rect_image = cv2.rectangle(image, (x - 50, y - 50), (x + 50, y + 50), (0, 0, 255), 2)
+            rect_image = cv2.rectangle(hsv_img, (x - 50, y - 50), (x + 50, y + 50), (0, 0, 255), 2)
             cv2.imshow('rec_image', rect_image)
 
             orangedetected = True
