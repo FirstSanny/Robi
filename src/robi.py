@@ -12,12 +12,16 @@ import math
 
 # CONSTANTS
 DEFAULT_NAO_IP = "nao3.local"
+#DEFAULT_NAO_IP = "10.0.7.13"
 DEFAULT_NAO_PORT = 9559
 
-#global variables
-balldetected = False
+#global variables - ports
 pip = None
 pport = None
+#global variables - constants
+sizeOfObject = 210
+focus = 30
+cameraId = 0
 
 ###RGB##
 #orange_down = np.array([16, 48, 91])
@@ -31,11 +35,8 @@ pport = None
 orange_down = np.array([5, 50, 50])
 orange_up = np.array([15, 255, 255])
 
+#global variables
 orangedetected = False
-
-#Size of the square and focus camera
-sizeOfObject = 210
-focus = 30
 
 
 def searchForTheBall(motionProxy, visionProxy):
@@ -44,7 +45,6 @@ def searchForTheBall(motionProxy, visionProxy):
     dist = 0
 
     while not(orangedetected):
-        cameraId = 0
 
         #get imagedata from top cam
         data = visionProxy.getBGR24Image(cameraId)
@@ -102,6 +102,22 @@ def searchForTheBall(motionProxy, visionProxy):
     return dist
 
 
+def makeFotoOfOrangeQuadrat(visionProxy):
+    # find quadrat
+    orange_quadrat = visionProxy.getBGR24Image(cameraId)
+    orange_image = np.fromstring(orange_quadrat,
+    dtype=np.uint8).reshape((480, 640, 3))
+
+    #show and write
+    cv2.imshow('image', orange_image)
+    orange_object = "orange_object"
+    while 1:
+        key = cv2.waitKey(5) & 0xFF
+        if key == 27:
+            break
+    cv2.imwrite(orange_object, orange_image)
+
+
 def main():
     '''
     ENTRY-POINT
@@ -120,8 +136,6 @@ def main():
     motionProxy.moveInit()
     ttsProxy.say("Hello Friends.")
 
-    #getVisionResults(0)
-
     ttsProxy.say("Going to search for the ball.")
     distance = 100
 
@@ -135,7 +149,9 @@ def main():
         cv2.destroyAllWindows()
 
         ttsProxy.say("Found the Ball. Moving toward it.")
-        motionProxy.move(distance, 0, 0)
+        motionProxy.move(distance - 0.1, 0, 0)
+    ttsProxy.say("In front of the ball")
+    makeFotoOfOrangeQuadrat(visionProxy)
 
 
 if __name__ == "__main__":
