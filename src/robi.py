@@ -6,8 +6,9 @@ a special destination for each object
 from math import pi as PI
 from naoqi import ALProxy
 from optparse import OptionParser
-import cv2
 import numpy as np
+import cv2
+import math
 
 # CONSTANTS
 DEFAULT_NAO_IP = "nao3.local"
@@ -32,10 +33,15 @@ orange_up = np.array([15, 255, 255])
 
 orangedetected = False
 
+#Size of the square and focus camera
+sizeOfObject = 210
+focus = 30
+
 
 def searchForTheBall(motionProxy, visionProxy):
     global orangedetected
     orangedetected = False
+    dist = 0
 
     while not(orangedetected):
         cameraId = 0
@@ -61,17 +67,27 @@ def searchForTheBall(motionProxy, visionProxy):
             # Searching for center (x,y) from object
             x = int(moments['m10'] / moments['m00'])
             y = int(moments['m01'] / moments['m00'])
+            computedSize = math.sqrt(area)
 
             # print coordinates on console
             print "x = ", x
             print "y = ", y
+            print "computedSize = ", computedSize
+
+            dist = (sizeOfObject / computedSize) * focus
+            print "distance = ", dist
 
             # mark the object with an red circle
-            rect_image = cv2.rectangle(cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
+            rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            rect_image = cv2.rectangle(rgb_img,
             (x - 50, y - 50), (x + 50, y + 50), (0, 0, 255), 2)
             cv2.imshow('rec_image', rect_image)
 
+            draw_image = cv2.drawContours(rgb_img, [mask], 1, (0, 255, 0), 2)
+            cv2.imshow('draw_image', draw_image)
+
             orangedetected = True
+
         while 1:
             key = cv2.waitKey(5) & 0xFF
             if key == 27:
@@ -80,8 +96,7 @@ def searchForTheBall(motionProxy, visionProxy):
         if not orangedetected:
             motionProxy.moveTo(0, 0, PI / 16)
 
-        #TODO: Compute Distance and return it
-        return 0.3
+    return dist
 
 
 def main():
@@ -117,7 +132,7 @@ def main():
         cv2.destroyAllWindows()
 
         ttsProxy.say("Found the Ball. Moving toward it.")
-        motionProxy.move(distance / 8, 0, 0)
+        motionProxy.move(distance, 0, 0)
 
 
 if __name__ == "__main__":
