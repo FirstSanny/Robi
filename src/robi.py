@@ -46,11 +46,13 @@ def searchForTheBall(motionProxy, visionProxy):
     while not(orangedetected):
         cameraId = 0
 
+        #get imagedata from top cam
         data = visionProxy.getBGR24Image(cameraId)
         image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
         #cv2.imshow('image', image)
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
+        #search orange
         mask = cv2.inRange(hsv_img, orange_down, orange_up)
         moments = cv2.moments(mask)
         area = moments['m00']
@@ -74,6 +76,7 @@ def searchForTheBall(motionProxy, visionProxy):
             print "y = ", y
             print "computedSize = ", computedSize
 
+            # calculate distance
             dist = (sizeOfObject / computedSize) * focus
             print "distance = ", dist
 
@@ -92,7 +95,7 @@ def searchForTheBall(motionProxy, visionProxy):
             key = cv2.waitKey(5) & 0xFF
             if key == 27:
                 break
-
+        #turn to search in another direction
         if not orangedetected:
             motionProxy.moveTo(0, 0, PI / 16)
 
