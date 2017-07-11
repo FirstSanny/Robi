@@ -120,7 +120,6 @@ def main():
     #getVisionResults(0)
 
     ttsProxy.say("Going to search for the ball.")
-    distance = 100
 
     while(distance > 0.2):
         distance = searchForTheBall(motionProxy, visionProxy)
