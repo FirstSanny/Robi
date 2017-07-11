@@ -11,8 +11,8 @@ import cv2
 import math
 
 # CONSTANTS
-DEFAULT_NAO_IP = "nao3.local"
-#DEFAULT_NAO_IP = "10.0.7.13"
+#DEFAULT_NAO_IP = "nao3.local"
+DEFAULT_NAO_IP = "10.0.7.13"
 DEFAULT_NAO_PORT = 9559
 
 #global variables - ports
@@ -63,9 +63,9 @@ def searchForTheBall(motionProxy, visionProxy):
 
         cv2.imshow('hsv_img', hsv_img)
         cv2.imshow('mask', mask)
-        #cv2.imshow('mask_image', mask2)
+        cv2.imshow('image', image)
 
-        if (area > 20000):
+        if (area > 20000000):
             # Searching for center (x,y) from object
             x = int(moments['m10'] / moments['m00'])
             y = int(moments['m01'] / moments['m00'])
@@ -83,7 +83,7 @@ def searchForTheBall(motionProxy, visionProxy):
             # mark the object with an red circle
             rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             rect_image = cv2.rectangle(rgb_img,
-            (x - 50, y - 50), (x + 50, y + 50), (0, 0, 255), 2)
+            (x , y ), (x + 50, y + 50), (0, 0, 255), 2)
             cv2.imshow('rec_image', rect_image)
 
             draw_image = cv2.drawContours(rgb_img, [mask], 1, (0, 255, 0), 2)
