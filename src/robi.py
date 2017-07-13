@@ -89,9 +89,11 @@ def searchForColor(colorDown, colorUp):
 
             # mark the object with an red circle
             rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            rect_image = cv2.rectangle(rgb_img,
-            (x, y), (x + 50, y + 50), (0, 0, 255), 2)
-            cv2.imshow('rec_image', rect_image)
+            #rect_image = cv2.rectangle(rgb_img,
+            #(x, y), (x + 50, y + 50), (0, 0, 255), 2)
+            #cv2.imshow('rec_image', rect_image)
+            cir_image = cv2.circle(rgb_img, (x, y), 50, Scalar(255, 0, 0), 3)
+            cv2.imshow('circ_image', cir_image)
 
             detected = True
 
@@ -138,7 +140,7 @@ def searchColorAndTakeFoto(imgTitle, colorDown, colorUp):
                 break
         cv2.destroyAllWindows()
 
-        ttsProxy.say("Found the orange square. moving to it.")
+        ttsProxy.say("Found the square object. moving to it.")
         distToWalk = distance / 2
         print "distance to walk =", distToWalk
         if(not moveTo(distToWalk, 0, 0)):
