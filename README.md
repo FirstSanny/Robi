@@ -12,3 +12,6 @@ For example, we will have a ball and a Lego construction in the class. The robot
 - When we are there, drop the object and repite the steps to search for the second object.
 ## Documentation:
 https://www.overleaf.com/10310915fppnqrbcqwdt
+
+## Power point presentation:
+https://1drv.ms/p/s!Au7kk5QDJi-Vgco7sJC8elQgbDPGpQ
