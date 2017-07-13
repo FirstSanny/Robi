@@ -199,6 +199,7 @@ def main(pip, pport):
     searchColorAndTakeFoto("pink_object", PINK_DOWN, PINK_UP)
 
     ttsProxy.say("Finished my job. Goodbye")
+    motionProxy.rest()
 
 
 if __name__ == "__main__":
