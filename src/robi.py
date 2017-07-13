@@ -137,6 +137,17 @@ def moveTo(x, y, theta):
             return False
     return True
 
+def initMotion():
+    # Wake up robot
+    motionProxy.setStiffnesses("Body", 1.0)
+    motionProxy.wakeUp()
+
+    #turn the head, so its looking straight forward
+    setHeadCentral()
+
+    # Send robot to Stand Init
+    motionProxy.moveInit()
+
 
 def main(pip, pport):
     '''
@@ -151,21 +162,15 @@ def main(pip, pport):
     global visionProxy
     visionProxy = ALProxy("RobocupVision", pip, pport)
 
-    # Wake up robot
-    motionProxy.setStiffnesses("Body", 1.0)
-    motionProxy.wakeUp()
-
-    #turn the head, so its looking straight forward
-    setHeadCentral()
-
-    # Send robot to Stand Init
-    motionProxy.moveInit()
+    initMotion()
     ttsProxy.say("Hello Masters.")
 
     ttsProxy.say("Going to search for the orange square.")
     distance = FELL_DOWN
 
     while(distance > 0.2 or distance == FELL_DOWN):
+        if(distance == FELL_DOWN):
+            initMotion()
         distance = searchForColor(orange_down, orange_up)
         if(distance == FELL_DOWN):
             continue
