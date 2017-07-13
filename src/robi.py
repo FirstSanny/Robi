@@ -7,8 +7,6 @@ from math import pi as PI
 from naoqi import ALProxy
 from optparse import OptionParser
 import numpy as np
-from os import listdir, path
-import pickle
 import cv2
 import math
 
@@ -17,51 +15,56 @@ import math
 DEFAULT_NAO_IP = "10.0.7.16"
 DEFAULT_NAO_PORT = 9559
 
-ROBOT_POSE_CLF = 'recources/robot_pose.pkl'
-ROBOT_POSE_DATA_DIR = 'recources/robot_pose_data'
-classes = listdir(ROBOT_POSE_DATA_DIR)
-
 #global variables - ports
 pip = None
 pport = None
 #global variables - constants
 sizeOfObject = 210
 focus = 300
-cameraId = 1
+cameraId0 = 0
+cameraId1 = 1
 cte_size = 1190
 
 ###HSV###
 orange_down = np.array([10, 150, 150])
 orange_up = np.array([15, 255, 255])
 
-#global variables
-orangedetected = False
 
-
-def searchForTheBall(motionProxy, visionProxy):
-    global orangedetected
-    orangedetected = False
-    dist = 0
-
-    while not(orangedetected):
-
+def getPictureFromOneCamera(visionProxy, color_down, color_up, cameraId):
         #get imagedata from top cam
         data = visionProxy.getBGR24Image(cameraId)
         image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
         #cv2.imshow('image', image)
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        #search orange
-        mask = cv2.inRange(hsv_img, orange_down, orange_up)
+        #search color
+        mask = cv2.inRange(hsv_img, color_down, color_up)
         moments = cv2.moments(mask)
         area = moments['m00']
+        return area, image, moments
 
-        #mask2 = cv2.inRange(image, orange_down, orange_up)
-        #moments = cv2.moments(mask2)
-        #area = moments['m00']
 
-        #cv2.imshow('hsv_img', hsv_img)
-        cv2.imshow('mask', mask)
+def getBetterPicture(visionProxy, color_down, color_up):
+        area0, image0, moments0 = getPictureFromOneCamera(visionProxy,
+        color_down, color_up, cameraId0)
+
+        area1, image1, moments1 = getPictureFromOneCamera(visionProxy,
+        color_down, color_up, cameraId1)
+
+        if area0 > area1:
+            return area0, image0, moments0
+        else:
+            return area1, image1, moments1
+
+
+def searchForColor(motionProxy, visionProxy, color_down, color_up):
+    detected = False
+    dist = 0
+    #Getting the picture with the bigger area of the color
+    area, image, moments = getBetterPicture(visionProxy, color_down, color_up)
+
+    while not(detected):
+
         cv2.imshow('image', image)
 
         if (area > 500000):
@@ -70,73 +73,43 @@ def searchForTheBall(motionProxy, visionProxy):
             y = int(moments['m01'] / moments['m00'])
             computedSize = math.sqrt(area)
 
-            # print coordinates on console
-            print "x = ", x
-            print "y = ", y
-            print "computedSize = ", computedSize
-
             # calculate distance
-            #dist = (sizeOfObject / computedSize) * focus
             dist = cte_size / computedSize
             print "distance = ", dist
 
             # mark the object with an red circle
             rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             rect_image = cv2.rectangle(rgb_img,
-            (x , y ), (x + 50, y + 50), (0, 0, 255), 2)
+            (x, y), (x + 50, y + 50), (0, 0, 255), 2)
             cv2.imshow('rec_image', rect_image)
 
-           # draw_image = cv2.drawContours(rgb_img, [mask], 1, (0, 255, 0), 2)
-            #cv2.imshow('draw_image', draw_image)
-
-            orangedetected = True
+            detected = True
 
         while 1:
             key = cv2.waitKey(5) & 0xFF
             if key == 27:
                 break
         #turn to search in another direction
-        if not orangedetected:
+        if not detected:
             motionProxy.moveTo(0, 0, PI / 16)
 
     return dist
 
 
-def makeFotoOfOrangeQuadrat(visionProxy):
+def makeFotoOfQuadrat(visionProxy, img_title):
     # find quadrat
-    orange_quadrat = visionProxy.getBGR24Image(cameraId)
-    orange_image = np.fromstring(orange_quadrat,
+    data = visionProxy.getBGR24Image(cameraId0)
+    image = np.fromstring(data,
     dtype=np.uint8).reshape((480, 640, 3))
 
     #show and write
-    cv2.imshow('image', orange_image)
-    orange_object = "orange_object"
+    cv2.imshow('image', image)
     while 1:
         key = cv2.waitKey(5) & 0xFF
         if key == 27:
             break
-    cv2.imwrite(orange_object, orange_image)
+    cv2.imwrite(img_title, image)
 
-def recognize_posture(motionProxy):
-    posture_classifier = pickle.load(open(ROBOT_POSE_CLF))
-    posture = 'unknown'
-    perception = motionProxy.getPerception()
-    data = {}
-    data.append(perception.joint['LHipYawPitch'])
-    data.append(perception.joint['LHipRoll'])
-    data.append(perception.joint['LHipPitch'])
-    data.append(perception.joint['LKneePitch'])
-    data.append(perception.joint['RHipYawPitch'])
-    data.append(perception.joint['RHipRoll'])
-    data.append(perception.joint['RHipPitch'])
-    data.append(perception.joint['RKneePitch'])
-    data += perception.imu
-
-    data = numpy.array(data).reshape(1, -1)
-
-    index = self.posture_classifier.predict(data)
-    posture = classes[index[0]]
-    return posture
 
 def main():
     '''
@@ -154,13 +127,14 @@ def main():
 
     # Send robot to Stand Init
     motionProxy.moveInit()
-    ttsProxy.say("Hello Friends.")
+    ttsProxy.say("Hello Masters.")
 
-    ttsProxy.say("Going to search for the ball.")
+    ttsProxy.say("Going to search for the orange square.")
     distance = 100
 
     while(distance > 0.2):
-        distance = searchForTheBall(motionProxy, visionProxy)
+        distance = searchForColor(motionProxy, visionProxy,
+        orange_down, orange_up)
 
         while(1):
             key = cv2.waitKey(5) & 0xFF
@@ -168,11 +142,12 @@ def main():
                 break
         cv2.destroyAllWindows()
 
-        ttsProxy.say("Found the Ball. Moving toward it.")
-        print "distance to walk =", distance/2
-        motionProxy.moveTo(distance / 2 , 0, 0)
-    ttsProxy.say("In front of the ball")
-    makeFotoOfOrangeQuadrat(visionProxy)
+        ttsProxy.say("Found the ball. moving to it.")
+        distToWalk = distance / 2
+        print "distance to walk =", distToWalk
+        motionProxy.moveTo(distToWalk, 0, 0)
+    ttsProxy.say("I#m near enough to make the foto")
+    makeFotoOfQuadrat(visionProxy, "orange_object")
 
 
 if __name__ == "__main__":
