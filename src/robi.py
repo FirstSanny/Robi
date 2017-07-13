@@ -26,11 +26,11 @@ SIZE_AT_A_METER = 1190
 FELL_DOWN = -1
 
 #** HSV **#
-orange_down = np.array([10, 150, 150])
-orange_up = np.array([15, 255, 255])
+ORANGE_DOWN = np.array([10, 150, 150])
+ORANGE_UP = np.array([15, 255, 255])
 
-pink_down = np.array([300, 150, 150])
-pink_up = np.array([320, 255, 255])
+PINK_DOWN = np.array([300, 150, 150])
+PINK_UP = np.array([320, 255, 255])
 
 ### GLOBAL VARIABLES ###
 
@@ -40,7 +40,7 @@ motionProxy = None
 visionProxy = None
 
 
-def getPictureFromOneCamera(color_down, color_up, cameraId):
+def getPictureFromOneCamera(colorDown, colorUp, cameraId):
         #get imagedata from top cam
         data = visionProxy.getBGR24Image(cameraId)
         image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
@@ -48,18 +48,18 @@ def getPictureFromOneCamera(color_down, color_up, cameraId):
         hsv_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         #search color
-        mask = cv2.inRange(hsv_img, color_down, color_up)
+        mask = cv2.inRange(hsv_img, colorDown, colorUp)
         moments = cv2.moments(mask)
         area = moments['m00']
         return area, image, moments
 
 
-def getBetterPicture(color_down, color_up):
+def getBetterPicture(colorDown, colorUp):
         area0, image0, moments0 = getPictureFromOneCamera(visionProxy,
-        color_down, color_up, CAM_ID_TOP)
+        colorDown, colorUp, CAM_ID_TOP)
 
         area1, image1, moments1 = getPictureFromOneCamera(visionProxy,
-        color_down, color_up, CAM_ID_BOTTOM)
+        colorDown, colorUp, CAM_ID_BOTTOM)
 
         if area0 > area1:
             return area0, image0, moments0
@@ -67,11 +67,11 @@ def getBetterPicture(color_down, color_up):
             return area1, image1, moments1
 
 
-def searchForColor(color_down, color_up):
+def searchForColor(colorDown, colorUp):
     detected = False
     dist = 0
     #Getting the picture with the bigger area of the color
-    area, image, moments = getBetterPicture(visionProxy, color_down, color_up)
+    area, image, moments = getBetterPicture(visionProxy, colorDown, colorUp)
 
     while not(detected):
 
@@ -107,7 +107,7 @@ def searchForColor(color_down, color_up):
     return dist
 
 
-def makeFotoOfQuadrat(img_title):
+def makeFotoOfQuadrat(imgTitle):
     # find quadrat
     data = visionProxy.getBGR24Image(CAM_ID_BOTTOM)
     image = np.fromstring(data,
@@ -119,7 +119,33 @@ def makeFotoOfQuadrat(img_title):
         key = cv2.waitKey(5) & 0xFF
         if key == 27:
             break
-    cv2.imwrite(img_title, image)
+    cv2.imwrite(imgTitle, image)
+
+
+def searchColorAndTakeFoto(imgTitle, colorDown, colorUp):
+    distance = FELL_DOWN
+
+    while(distance > 0.2 or distance == FELL_DOWN):
+        if(distance == FELL_DOWN):
+            initMotion()
+        distance = searchForColor(colorDown, colorUp)
+        if(distance == FELL_DOWN):
+            continue
+
+        while(1):
+            key = cv2.waitKey(5) & 0xFF
+            if key == 27:
+                break
+        cv2.destroyAllWindows()
+
+        ttsProxy.say("Found the orange square. moving to it.")
+        distToWalk = distance / 2
+        print "distance to walk =", distToWalk
+        if(not moveTo(distToWalk, 0, 0)):
+            distance = FELL_DOWN
+
+    ttsProxy.say("I'm near enough to make the foto")
+    makeFotoOfQuadrat(imgTitle)
 
 
 def setHeadCentral():
@@ -136,6 +162,7 @@ def moveTo(x, y, theta):
             ttsProxy.say("Damnit. Can anybody help me standing up?")
             return False
     return True
+
 
 def initMotion():
     # Wake up robot
@@ -166,29 +193,12 @@ def main(pip, pport):
     ttsProxy.say("Hello Masters.")
 
     ttsProxy.say("Going to search for the orange square.")
-    distance = FELL_DOWN
+    searchColorAndTakeFoto("orange_object", ORANGE_DOWN, ORANGE_UP)
 
-    while(distance > 0.2 or distance == FELL_DOWN):
-        if(distance == FELL_DOWN):
-            initMotion()
-        distance = searchForColor(orange_down, orange_up)
-        if(distance == FELL_DOWN):
-            continue
+    ttsProxy.say("Going to search for the pink square.")
+    searchColorAndTakeFoto("pink_object", PINK_DOWN, PINK_UP)
 
-        while(1):
-            key = cv2.waitKey(5) & 0xFF
-            if key == 27:
-                break
-        cv2.destroyAllWindows()
-
-        ttsProxy.say("Found the orange square. moving to it.")
-        distToWalk = distance / 2
-        print "distance to walk =", distToWalk
-        if(not moveTo(distToWalk, 0, 0)):
-            distance = FELL_DOWN
-
-    ttsProxy.say("I'm near enough to make the foto")
-    makeFotoOfQuadrat("orange_object")
+    ttsProxy.say("Finished my job. Goodbye")
 
 
 if __name__ == "__main__":
