@@ -158,7 +158,7 @@ def moveTo(x, y, theta):
     motionProxy.post.moveTo(x, y, theta)
     while(motionProxy.moveIsActive()):
         if(motionProxy.getPosture() == "Back" or
-        motionProxy.getPosture("Belly")):
+        motionProxy.getPosture() == "Belly"):
             ttsProxy.say("Damnit. Can anybody help me standing up?")
             return False
     return True
