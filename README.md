@@ -10,3 +10,5 @@ For example, we will have a ball and a Lego construction in the class. The robot
 - When we are really close and in front of it, we want to turn our robot. We want to catch the ball from the side(maybe with the right hand). 
 - When we catch it, we have to search for the object’s target position. The same than before(Maschine learning to find it, calculate the distance and walk there)
 - When we are there, drop the object and repite the steps to search for the second object.
+## Documentation:
+https://www.overleaf.com/10310915fppnqrbcqwdt
