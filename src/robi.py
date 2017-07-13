@@ -10,27 +10,37 @@ import numpy as np
 import cv2
 import math
 
-# CONSTANTS
+### CONSTANTS ###
+
+#** Connection **#
 #DEFAULT_NAO_IP = "nao3.local"
 DEFAULT_NAO_IP = "10.0.7.16"
 DEFAULT_NAO_PORT = 9559
 
-#global variables - ports
-pip = None
-pport = None
-#global variables - constants
-sizeOfObject = 210
-focus = 300
-cameraId0 = 0
-cameraId1 = 1
-cte_size = 1190
+#** sizes **#
+CAM_ID_TOP = 0
+CAM_ID_BOTTOM = 1
+SIZE_AT_A_METER = 1190
 
-###HSV###
+#** for program **#
+FELL_DOWN = -1
+
+#** HSV **#
 orange_down = np.array([10, 150, 150])
 orange_up = np.array([15, 255, 255])
 
+pink_down = np.array([300, 150, 150])
+pink_up = np.array([320, 255, 255])
 
-def getPictureFromOneCamera(visionProxy, color_down, color_up, cameraId):
+### GLOBAL VARIABLES ###
+
+#** Proxys **#
+ttsProxy = None
+motionProxy = None
+visionProxy = None
+
+
+def getPictureFromOneCamera(color_down, color_up, cameraId):
         #get imagedata from top cam
         data = visionProxy.getBGR24Image(cameraId)
         image = np.fromstring(data, dtype=np.uint8).reshape((480, 640, 3))
@@ -44,12 +54,12 @@ def getPictureFromOneCamera(visionProxy, color_down, color_up, cameraId):
         return area, image, moments
 
 
-def getBetterPicture(visionProxy, color_down, color_up):
+def getBetterPicture(color_down, color_up):
         area0, image0, moments0 = getPictureFromOneCamera(visionProxy,
-        color_down, color_up, cameraId0)
+        color_down, color_up, CAM_ID_TOP)
 
         area1, image1, moments1 = getPictureFromOneCamera(visionProxy,
-        color_down, color_up, cameraId1)
+        color_down, color_up, CAM_ID_BOTTOM)
 
         if area0 > area1:
             return area0, image0, moments0
@@ -57,7 +67,7 @@ def getBetterPicture(visionProxy, color_down, color_up):
             return area1, image1, moments1
 
 
-def searchForColor(motionProxy, visionProxy, color_down, color_up):
+def searchForColor(color_down, color_up):
     detected = False
     dist = 0
     #Getting the picture with the bigger area of the color
@@ -74,7 +84,7 @@ def searchForColor(motionProxy, visionProxy, color_down, color_up):
             computedSize = math.sqrt(area)
 
             # calculate distance
-            dist = cte_size / computedSize
+            dist = SIZE_AT_A_METER / computedSize
             print "distance = ", dist
 
             # mark the object with an red circle
@@ -91,14 +101,15 @@ def searchForColor(motionProxy, visionProxy, color_down, color_up):
                 break
         #turn to search in another direction
         if not detected:
-            motionProxy.moveTo(0, 0, PI / 16)
+            if(not moveTo(motionProxy, ttsProxy, 0, 0, PI / 16)):
+                return FELL_DOWN
 
     return dist
 
 
-def makeFotoOfQuadrat(visionProxy, img_title):
+def makeFotoOfQuadrat(img_title):
     # find quadrat
-    data = visionProxy.getBGR24Image(cameraId0)
+    data = visionProxy.getBGR24Image(CAM_ID_BOTTOM)
     image = np.fromstring(data,
     dtype=np.uint8).reshape((480, 640, 3))
 
@@ -111,30 +122,53 @@ def makeFotoOfQuadrat(visionProxy, img_title):
     cv2.imwrite(img_title, image)
 
 
-def main():
+def setHeadCentral():
+    yawAngle = motionProxy.getAngles("HeadYaw", True)
+    pitchAngle = motionProxy.getAngles("HeadPitch", True)
+    motionProxy.changeHeadAngles(-1 * yawAngle, -1 * pitchAngle, 0.1)
+
+
+def moveTo(x, y, theta):
+    motionProxy.post.moveTo(x, y, theta)
+    while(motionProxy.moveIsActive()):
+        if(motionProxy.getPosture() == "Back" or
+        motionProxy.getPosture("Belly")):
+            ttsProxy.say("Damnit. Can anybody help me standing up?")
+            return False
+    return True
+
+
+def main(pip, pport):
     '''
     ENTRY-POINT
     '''
 
     # Init Proxy's
+    global ttsProxy
     ttsProxy = ALProxy("ALTextToSpeech", pip, pport)
+    global motionProxy
     motionProxy = ALProxy("ALMotion", pip, pport)
+    global visionProxy
     visionProxy = ALProxy("RobocupVision", pip, pport)
 
     # Wake up robot
     motionProxy.setStiffnesses("Body", 1.0)
     motionProxy.wakeUp()
 
+    #turn the head, so its looking straight forward
+    setHeadCentral()
+
     # Send robot to Stand Init
     motionProxy.moveInit()
     ttsProxy.say("Hello Masters.")
 
     ttsProxy.say("Going to search for the orange square.")
-    distance = 100
+    distance = FELL_DOWN
 
-    while(distance > 0.2):
-        distance = searchForColor(motionProxy, visionProxy,
-        orange_down, orange_up)
+    while(distance > 0.2 or distance == FELL_DOWN):
+        distance = searchForColor(orange_down, orange_up)
+        if(distance == FELL_DOWN):
+            continue
 
         while(1):
             key = cv2.waitKey(5) & 0xFF
@@ -142,18 +176,18 @@ def main():
                 break
         cv2.destroyAllWindows()
 
-        ttsProxy.say("Found the ball. moving to it.")
+        ttsProxy.say("Found the orange square. moving to it.")
         distToWalk = distance / 2
         print "distance to walk =", distToWalk
-        motionProxy.moveTo(distToWalk, 0, 0)
-    ttsProxy.say("I#m near enough to make the foto")
-    makeFotoOfQuadrat(visionProxy, "orange_object")
+        if(not moveTo(distToWalk, 0, 0)):
+            distance = FELL_DOWN
+
+    ttsProxy.say("I'm near enough to make the foto")
+    makeFotoOfQuadrat("orange_object")
 
 
 if __name__ == "__main__":
     # Parsing Commandlineparams
-    global pip
-    global pport
     parser = OptionParser()
     parser.add_option("--pip",
         help="Parent broker port. The IP address or your robot",
@@ -169,4 +203,4 @@ if __name__ == "__main__":
     (opts, args_) = parser.parse_args()
     pip = opts.pip
     pport = opts.pport
-    main()
+    main(pip, pport)
