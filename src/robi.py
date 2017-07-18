@@ -14,7 +14,7 @@ import math
 
 #** Connection **#
 #DEFAULT_NAO_IP = "nao3.local"
-DEFAULT_NAO_IP = "10.0.7.13"
+DEFAULT_NAO_IP = "10.0.7.14"
 DEFAULT_NAO_PORT = 9559
 
 #** sizes **#
@@ -27,7 +27,7 @@ FELL_DOWN = -1
 
 #** HSV **#
 ORANGE_DOWN = np.array([10, 150, 150])
-ORANGE_UP = np.array([15, 255, 255])
+ORANGE_UP = np.array([20, 255, 255])
 
 PINK_DOWN = np.array([150, 100, 100])
 PINK_UP = np.array([200, 255, 255])
@@ -184,6 +184,7 @@ def moveTo(x, y, theta):
 
 def initMotion(shouldRest):
     # Wake up robot
+   # motionProxy.setStiffnesses("Body", 0.0)
     motionProxy.setStiffnesses("Body", 1.0)
     if(shouldRest):
         motionProxy.rest()
@@ -213,11 +214,13 @@ def main(pip, pport):
     initMotion(False)
     #ttsProxy.say("Hello Masters.")
 
-    ttsProxy.say("Going to search for the orange square.")
-    searchColorAndTakeFoto("orange_object.png", ORANGE_DOWN, ORANGE_UP)
+
 
     ttsProxy.say("Going to search for the pink square.")
     searchColorAndTakeFoto("pink_object.png", PINK_DOWN, PINK_UP)
+
+    ttsProxy.say("Going to search for the orange square.")
+    searchColorAndTakeFoto("orange_object.png", ORANGE_DOWN, ORANGE_UP)
 
 
 
